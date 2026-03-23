@@ -1,0 +1,53 @@
+import os
+import json
+import base64
+
+def restore_project(bundle_file, target_dir="."):
+    """
+    Odtwarza strukturę projektu z pliku AllInOne.txt.
+    """
+    if not os.path.exists(bundle_file):
+        print(f"BŁĄD: Nie znaleziono pliku {bundle_file}!")
+        return
+
+    print(f"--- Rozpoczynam odtwarzanie projektu z: {bundle_file} ---")
+    
+    try:
+        with open(bundle_file, 'r', encoding='utf-8') as f:
+            bundle = json.load(f)
+    except Exception as e:
+        print(f"BŁĄD podczas odczytu paczki: {e}")
+        return
+
+    files = bundle.get("files", [])
+    print(f"Liczba plików do odtworzenia: {len(files)}")
+
+    for f_info in files:
+        rel_path = f_info["path"]
+        content = f_info["content"]
+        encoding = f_info["encoding"]
+        
+        abs_path = os.path.join(target_dir, rel_path)
+        
+        # Tworzenie folderów nadrzędnych
+        os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+        
+        try:
+            if encoding == "base64":
+                with open(abs_path, 'wb') as f:
+                    f.write(base64.b64decode(content))
+            else:
+                with open(abs_path, 'w', encoding='utf-8') as f:
+                    f.write(content)
+            # print(f"Odtworzono: {rel_path}")
+        except Exception as e:
+            print(f"BŁĄD przy zapisie {rel_path}: {e}")
+
+    print("\n--- OPERACJA ZAKOŃCZONA SUKCESEM! ---")
+    print(f"Projekt został odtworzony w: {os.path.abspath(target_dir)}")
+    print("Możesz teraz utworzyć środowisko wirtualne (.venv) i zainstalować zależności.")
+
+if __name__ == "__main__":
+    # Domyślnie szuka pliku w tym samym folderze
+    file_to_load = "TeamFlow_AllInOne.txt"
+    restore_project(file_to_load)
